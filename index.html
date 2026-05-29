@@ -1,0 +1,1395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuizMaster — Test Your Knowledge</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  /* ── Reset & Variables ───────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0c0f1a;
+    --surface:   #141824;
+    --card:      #1a1f30;
+    --border:    #252b3b;
+    --accent:    #6c63ff;
+    --accent2:   #ff6584;
+    --gold:      #f9c846;
+    --green:     #34d399;
+    --red:       #f87171;
+    --text:      #e8eaf0;
+    --muted:     #7a82a0;
+    --radius:    18px;
+    --font-head: 'Syne', sans-serif;
+    --font-body: 'DM Sans', sans-serif;
+    --shadow:    0 8px 40px rgba(0,0,0,.45);
+    --glow:      0 0 30px rgba(108,99,255,.3);
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    position: relative;
+    overflow-x: hidden;
+  }
+
+  /* ── Animated Background ─────────────────────────── */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 20% 20%, rgba(108,99,255,.12) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 80% 80%, rgba(255,101,132,.09) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 60% 30%, rgba(52,211,153,.06) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ── Main Wrapper ────────────────────────────────── */
+  #app {
+    width: 100%;
+    max-width: 760px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── Screens ─────────────────────────────────────── */
+  .screen { display: none; animation: fadeUp .45s ease both; }
+  .screen.active { display: block; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(22px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── Card ────────────────────────────────────────── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 40px;
+    box-shadow: var(--shadow);
+  }
+
+  /* ── Start Screen ────────────────────────────────── */
+  .start-hero {
+    text-align: center;
+    padding: 56px 40px 48px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .start-hero::before {
+    content: '';
+    position: absolute;
+    top: -60px; left: 50%;
+    transform: translateX(-50%);
+    width: 300px; height: 300px;
+    background: radial-gradient(circle, rgba(108,99,255,.18) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(108,99,255,.15);
+    border: 1px solid rgba(108,99,255,.35);
+    color: #a89fff;
+    font-family: var(--font-head);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    padding: 6px 16px;
+    border-radius: 99px;
+    margin-bottom: 24px;
+  }
+
+  .badge::before { content: ''; font-size: 11px; }
+
+  h1 {
+    font-family: var(--font-head);
+    font-size: clamp(2rem, 6vw, 3.4rem);
+    font-weight: 800;
+    line-height: 1.08;
+    letter-spacing: -.02em;
+    color: var(--text);
+    margin-bottom: 16px;
+  }
+
+  h1 span {
+    background: linear-gradient(120deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .start-meta {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+    max-width: 460px;
+    margin: 0 auto 36px;
+  }
+
+  .info-strip {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    flex-wrap: wrap;
+    margin-bottom: 40px;
+  }
+
+  .info-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 18px;
+    font-size: 13px;
+    color: var(--muted);
+    font-weight: 500;
+  }
+
+  .info-pill .icon { font-size: 16px; }
+  .info-pill strong { color: var(--text); font-weight: 600; }
+
+  .high-score-banner {
+    background: rgba(249,200,70,.08);
+    border: 1px solid rgba(249,200,70,.25);
+    border-radius: 12px;
+    padding: 12px 20px;
+    font-size: 13px;
+    color: var(--gold);
+    margin-bottom: 32px;
+    display: none;
+  }
+
+  .high-score-banner.visible { display: block; }
+
+  /* ── Buttons ─────────────────────────────────────── */
+  .btn {
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: .01em;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 28px;
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .15s ease, opacity .15s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn:active { transform: scale(.97); }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #9b75ff);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(108,99,255,.4);
+  }
+
+  .btn-primary:hover {
+    box-shadow: 0 6px 28px rgba(108,99,255,.55);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondary {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  .btn-secondary:hover {
+    border-color: var(--accent);
+    color: var(--text);
+    transform: translateY(-1px);
+  }
+
+  .btn-danger {
+    background: rgba(248,113,113,.12);
+    border: 1px solid rgba(248,113,113,.3);
+    color: var(--red);
+  }
+
+  .btn-danger:hover {
+    background: rgba(248,113,113,.2);
+    transform: translateY(-1px);
+  }
+
+  .btn-lg { padding: 16px 40px; font-size: 16px; border-radius: 14px; }
+  .btn-sm { padding: 9px 18px; font-size: 13px; border-radius: 9px; }
+
+  .btn:disabled {
+    opacity: .35;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+  }
+
+  /* ── Quiz Screen ─────────────────────────────────── */
+  #quiz-screen { display: none; flex-direction: column; gap: 20px; }
+  #quiz-screen.active { display: flex; }
+
+  /* Header Bar */
+  .quiz-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 24px;
+    gap: 16px;
+    flex-wrap: wrap;
+    box-shadow: var(--shadow);
+  }
+
+  .quiz-brand {
+    font-family: var(--font-head);
+    font-weight: 800;
+    font-size: 17px;
+    color: var(--text);
+  }
+
+  .quiz-brand span { color: var(--accent); }
+
+  /* Timer */
+  .timer-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .timer-ring {
+    position: relative;
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+  }
+
+  .timer-ring svg { transform: rotate(-90deg); }
+
+  .timer-ring circle {
+    fill: none;
+    stroke-width: 3;
+  }
+
+  .timer-track { stroke: var(--border); }
+
+  .timer-progress {
+    stroke: var(--accent);
+    stroke-dasharray: 125.6;
+    stroke-dashoffset: 0;
+    stroke-linecap: round;
+    transition: stroke-dashoffset .9s linear, stroke .4s ease;
+  }
+
+  .timer-display {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 11px;
+    color: var(--text);
+    letter-spacing: .02em;
+  }
+
+  .timer-label {
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+
+  .timer-label strong {
+    display: block;
+    font-family: var(--font-head);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .timer-wrap.warning .timer-progress { stroke: var(--gold); }
+  .timer-wrap.danger .timer-progress { stroke: var(--red); }
+  .timer-wrap.danger .timer-label strong { color: var(--red); }
+
+  /* Score Live */
+  .live-score {
+    font-family: var(--font-head);
+    font-size: 0px;
+    color: var(--muted);
+    text-align: right;
+  }
+
+  .live-score strong {
+    display: block;
+    font-size: 0px;
+    font-weight: 700;
+    color: var(--green);
+    line-height: 1;
+  }
+
+  /* Progress */
+  .progress-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .progress-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .q-counter {
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--text);
+  }
+
+  .progress-bar-outer {
+    height: 6px;
+    background: var(--border);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 99px;
+    transition: width .4s cubic-bezier(.4,0,.2,1);
+  }
+
+  /* Dot Navigator */
+  .dot-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+  }
+
+  .dot {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: var(--surface);
+    font-family: var(--font-head);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all .2s ease;
+  }
+
+  .dot.current {
+    border-color: var(--accent);
+    background: rgba(108,99,255,.18);
+    color: var(--accent);
+    box-shadow: 0 0 10px rgba(108,99,255,.25);
+  }
+
+  .dot.answered { background: rgba(52,211,153,.12); border-color: var(--green); color: var(--green); }
+  .dot.skipped  { background: rgba(249,200,70,.1);  border-color: var(--gold); color: var(--gold); }
+
+  /* Question Card */
+  .question-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 36px 40px;
+    box-shadow: var(--shadow);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .question-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 4px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--accent), var(--accent2));
+    border-radius: 4px 0 0 4px;
+  }
+
+  .q-category {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+    font-family: var(--font-head);
+  }
+
+  .q-text {
+    font-family: var(--font-head);
+    font-size: clamp(1rem, 2.5vw, 1.25rem);
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--text);
+    margin-bottom: 32px;
+  }
+
+  /* Options */
+  .options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+
+  @media (max-width: 520px) {
+    .options-grid { grid-template-columns: 1fr; }
+  }
+
+  .option-btn {
+    position: relative;
+    background: var(--surface);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    cursor: pointer;
+    transition: all .2s ease;
+    text-align: left;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: var(--font-body);
+    font-size: 14px;
+    line-height: 1.4;
+    overflow: hidden;
+  }
+
+  .option-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    opacity: 0;
+    transition: opacity .2s ease;
+    border-radius: inherit;
+  }
+
+  .option-btn:hover:not(:disabled) {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108,99,255,.2);
+  }
+
+  .option-btn .opt-letter {
+    position: relative;
+    z-index: 1;
+    min-width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--muted);
+    flex-shrink: 0;
+    transition: all .2s ease;
+  }
+
+  .option-btn .opt-text {
+    position: relative;
+    z-index: 1;
+    flex: 1;
+    font-weight: 400;
+  }
+
+  /* Selected */
+  .option-btn.selected {
+    border-color: var(--accent);
+    background: rgba(108,99,255,.12);
+    box-shadow: 0 0 0 3px rgba(108,99,255,.15), 0 4px 16px rgba(108,99,255,.2);
+    transform: translateY(-1px);
+  }
+
+  .option-btn.selected .opt-letter {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  /* Correct / Wrong (review mode) */
+  .option-btn.correct {
+    border-color: var(--green);
+    background: rgba(52,211,153,.1);
+    box-shadow: 0 0 0 2px rgba(52,211,153,.15);
+    cursor: default;
+  }
+
+  .option-btn.correct .opt-letter { background: var(--green); color: #fff; }
+
+  .option-btn.wrong {
+    border-color: var(--red);
+    background: rgba(248,113,113,.1);
+    box-shadow: 0 0 0 2px rgba(248,113,113,.15);
+    cursor: default;
+  }
+
+  .option-btn.wrong .opt-letter { background: var(--red); color: #fff; }
+
+  .option-btn:disabled { cursor: default; transform: none !important; }
+
+  /* Feedback tag */
+  .option-btn .feedback-tag {
+    position: relative;
+    z-index: 1;
+    font-size: 12px;
+    margin-left: auto;
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-family: var(--font-head);
+    white-space: nowrap;
+    display: none;
+  }
+
+  .option-btn.correct .feedback-tag { display: block; background: rgba(52,211,153,.2); color: var(--green); }
+  .option-btn.wrong   .feedback-tag { display: block; background: rgba(248,113,113,.2); color: var(--red); }
+
+  /* Nav Buttons */
+  .quiz-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .nav-left, .nav-right { display: flex; gap: 10px; align-items: center; }
+
+  /* ── Result Screen ────────────────────────────────── */
+  #result-screen .card { text-align: center; }
+
+  .result-emoji {
+    font-size: 64px;
+    display: block;
+    margin-bottom: 8px;
+    animation: bounce .6s ease both .3s;
+  }
+
+  @keyframes bounce {
+    0%   { transform: scale(0); }
+    60%  { transform: scale(1.15); }
+    80%  { transform: scale(.95); }
+    100% { transform: scale(1); }
+  }
+
+  .result-title {
+    font-family: var(--font-head);
+    font-size: clamp(1.5rem, 4vw, 2.2rem);
+    font-weight: 800;
+    margin-bottom: 8px;
+  }
+
+  .result-message {
+    font-size: 15px;
+    color: var(--muted);
+    margin-bottom: 36px;
+    line-height: 1.6;
+  }
+
+  .score-big {
+    font-family: var(--font-head);
+    font-size: clamp(3rem, 10vw, 5rem);
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 6px;
+    background: linear-gradient(120deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .score-sub {
+    color: var(--muted);
+    font-size: 14px;
+    margin-bottom: 36px;
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 32px;
+    text-align: left;
+  }
+
+  @media (max-width: 480px) {
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  .stat-box {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+  }
+
+  .stat-box .stat-icon { font-size: 22px; margin-bottom: 8px; display: block; }
+  .stat-box .stat-value {
+    font-family: var(--font-head);
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .stat-box .stat-label { font-size: 12px; color: var(--muted); font-weight: 500; }
+
+  .stat-box.green .stat-value { color: var(--green); }
+  .stat-box.red   .stat-value { color: var(--red); }
+  .stat-box.gold  .stat-value { color: var(--gold); }
+  .stat-box.accent .stat-value { color: var(--accent); }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 32px;
+    border-radius: 14px;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 18px;
+    margin-bottom: 32px;
+  }
+
+  .status-badge.pass {
+    background: rgba(52,211,153,.12);
+    border: 1.5px solid rgba(52,211,153,.3);
+    color: var(--green);
+  }
+
+  .status-badge.fail {
+    background: rgba(248,113,113,.1);
+    border: 1.5px solid rgba(248,113,113,.25);
+    color: var(--red);
+  }
+
+  .result-btns { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+
+  /* ── Review Section ───────────────────────────────── */
+  .review-section {
+    margin-top: 28px;
+    text-align: left;
+  }
+
+  .review-toggle {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 20px;
+    cursor: pointer;
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text);
+    margin-bottom: 0;
+    transition: border-color .2s ease;
+  }
+
+  .review-toggle:hover { border-color: var(--accent); }
+  .review-toggle .chevron { transition: transform .3s ease; }
+  .review-toggle.open .chevron { transform: rotate(180deg); }
+
+  .review-list {
+    display: none;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 12px;
+    animation: fadeUp .3s ease;
+  }
+
+  .review-list.open { display: flex; }
+
+  .review-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 20px;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .review-item .ri-q {
+    font-family: var(--font-head);
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .ri-num {
+    min-width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--muted);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .ri-result {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 6px;
+  }
+
+  .ri-tag {
+    font-size: 11px;
+    font-weight: 600;
+    font-family: var(--font-head);
+    padding: 3px 10px;
+    border-radius: 6px;
+    letter-spacing: .03em;
+  }
+
+  .ri-tag.correct { background: rgba(52,211,153,.15); color: var(--green); }
+  .ri-tag.wrong   { background: rgba(248,113,113,.13); color: var(--red); }
+  .ri-tag.skipped { background: rgba(249,200,70,.12); color: var(--gold); }
+
+  /* ── Responsive ──────────────────────────────────── */
+  @media (max-width: 600px) {
+    .card, .start-hero { padding: 28px 22px; }
+    .question-card { padding: 28px 22px; }
+    .quiz-header { padding: 14px 18px; gap: 10px; }
+    h1 { font-size: 1.9rem; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+
+  /* ── Scrollbar ───────────────────────────────────── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+
+  /* ── Pulse animation for time running out ─────────── */
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: .5; }
+  }
+
+  .timer-wrap.danger .timer-label strong { animation: pulse 1s ease infinite; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ────────────── START SCREEN ────────────── -->
+  <div id="start-screen" class="screen active">
+    <div class="start-hero">
+      <div class="badge">phoenix Real Estate</div>
+      <img src="logo.png.jpeg" alt="QuizMaster Logo" width="120">
+      <h1>Quiz<span>Master</span></h1>
+      <p class="start-meta">Put your knowledge to the test across Modern History, Artifical Intelligence, Business &amp; more. 20 questions. 20 minutes. Are you ready?</p>
+
+      <div class="info-strip">
+        <div class="info-pill"><span class="icon">❓</span><span><strong>20</strong> Questions</span></div>
+        <div class="info-pill"><span class="icon">⏱</span><span><strong>20 min</strong> Total</span></div>
+        <div class="info-pill"><span class="icon">🏆</span><span><strong>+1</strong> per correct</span></div>
+        <div class="info-pill"><span class="icon">✅</span><span><strong>80%</strong> to pass</span></div>
+      </div>
+
+      <div id="high-score-banner" class="high-score-banner">
+        🥇 Your best score: <strong id="hs-display"></strong>
+      </div>
+
+      <button class="btn btn-primary btn-lg" onclick="startQuiz()">
+        Start Quiz ⚡
+      </button>
+    </div>
+    <center>
+    <p class="start-meta">
+      By Sugata And Ashis
+    </p>
+    </center>
+  </div>
+
+
+  <!-- ────────────── QUIZ SCREEN ────────────── -->
+  <div id="quiz-screen" class="screen">
+
+    <!-- Header -->
+    <div class="quiz-header">
+      <div class="quiz-brand">Quiz<span>Master</span></div>
+
+      <div class="timer-wrap" id="timer-wrap">
+        <div class="timer-ring">
+          <svg viewBox="0 0 44 44" width="48" height="48">
+            <circle class="timer-track" cx="22" cy="22" r="20"/>
+            <circle class="timer-progress" id="timer-ring-path" cx="22" cy="22" r="20"/>
+          </svg>
+          <div class="timer-display" id="timer-ring-label">10:00</div>
+        </div>
+        <div class="timer-label">Time Left<strong id="timer-text">10:00</strong></div>
+      </div>
+
+      <div class="live-score">
+        Score<strong id="live-score-val">0</strong>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="card" style="padding:20px 28px;">
+      <div class="progress-top">
+        <span class="q-counter" id="q-counter">Question 1 of 10</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar-outer" style="margin:10px 0 14px;">
+        <div class="progress-bar-fill" id="progress-bar" style="width:0%"></div>
+      </div>
+      <div class="dot-nav" id="dot-nav"></div>
+    </div>
+
+    <!-- Question -->
+    <div class="question-card" id="question-card">
+      <div class="q-category" id="q-category">Science</div>
+      <div class="q-text" id="q-text">Question text</div>
+      <div class="options-grid" id="options-grid"></div>
+    </div>
+
+    <!-- Navigation -->
+    <div class="quiz-nav">
+      <div class="nav-left">
+        <button class="btn btn-secondary" id="btn-prev" onclick="prevQuestion()">← Prev</button>
+      </div>
+      <div class="nav-right">
+        <button class="btn btn-danger btn-sm" id="btn-submit" onclick="confirmSubmit()">Submit Quiz</button>
+        <button class="btn btn-primary" id="btn-next" onclick="nextQuestion()">Next →</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ────────────── RESULT SCREEN ────────────── -->
+  <div id="result-screen" class="screen">
+    <div class="card">
+      <span class="result-emoji" id="result-emoji">🎉</span>
+      <div class="result-title" id="result-title">Excellent!</div>
+      <div class="result-message" id="result-message">Outstanding performance!</div>
+
+      <div class="score-big" id="score-big">8/10</div>
+      <div class="score-sub">Total Score</div>
+
+      <div class="stats-grid">
+        <div class="stat-box green">
+          <span class="stat-icon">✅</span>
+          <div class="stat-value" id="stat-correct">0</div>
+          <div class="stat-label">Correct Answers</div>
+        </div>
+        <div class="stat-box red">
+          <span class="stat-icon">❌</span>
+          <div class="stat-value" id="stat-wrong">0</div>
+          <div class="stat-label">Wrong Answers</div>
+        </div>
+        <div class="stat-box gold">
+          <span class="stat-icon">⏭</span>
+          <div class="stat-value" id="stat-skipped">0</div>
+          <div class="stat-label">Skipped</div>
+        </div>
+        <div class="stat-box accent">
+          <span class="stat-icon">📊</span>
+          <div class="stat-value" id="stat-pct">0%</div>
+          <div class="stat-label">Percentage</div>
+        </div>
+      </div>
+
+      <div class="status-badge" id="status-badge">
+        <span id="status-icon">✅</span>
+        <span id="status-text">Pass</span>
+      </div>
+
+      <div class="result-btns">
+        <button class="btn btn-primary btn-lg" onclick="restartQuiz()">🔄 Restart Quiz</button>
+        <button class="btn btn-secondary" onclick="showStart()">🏠 Home</button>
+      </div>
+
+      <!-- Review -->
+      <div class="review-section">
+        <button class="review-toggle" id="review-toggle" onclick="toggleReview()">
+          <span>📋 Review Answers</span>
+          <span class="chevron">▼</span>
+        </button>
+        <div class="review-list" id="review-list"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ─── Questions ────────────────────────────────────────────────
+const QUESTIONS = [
+  {
+    category: "Football",
+    text: "Copa America,the oldest international continental football composition was held in 1916 in honour of the 100th anniversary of a country's independence. Identify the country?",
+    options: ["brazil", "spain", "Argentina", "zambia"],
+    answer: 2
+  },
+  {
+    category: "Government schemes",
+    text: "PM SYM is a Government scheme meant for old age protection and socal security of Unorganised Workers(UW). Expand PM SYM.",
+    options: ["Pradhan Mantri Awas Yojana", "Pradhan Mantri Jan Arogya Yogana ", "Pradhan Mantri Ujjwala Yojana ", "Pradhan Mantri Shram Yogi Maandhan"],
+    answer: 3
+  },
+  {
+    category: "English Literature",
+    text: "An English author recognised as one of the best selling fiction writers of all time she used to work as an archeological adventurous with an estimated 2 billion copies of her work sold. she is no for her 66 detective novel and 14 short story. Who is the author",
+    options: ["Jane Austen", "Charles Dickens", "Agatha Christie", "Hanya Yanagihara"],
+    answer: 2
+  },
+  {
+    category: "Roman Mythology",
+    text: "Which Roman god, a central figure in the Capitoline Triad and honoured with a grand temple on Rome's Capitoline Hill, was worshipped as the protector of the state and a symbol of divine authority and political power?",
+    options: ["Mercury", "Hydra", "Jupiter", "Vulcan"],
+    answer: 2
+  },
+  {
+    category: "Indian Business",
+    text: "Bhavish Aggarwal and Ankit Bhati, founders of this company were inspired by the Spanish version of 'Hello' while naming their venture. Name this app.",
+    options: ["Zomato", "SEBI", "Ola", "IDBI BANK"],
+    answer: 2
+  },
+  {
+    category: "Indian Politics",
+    text: "Which constitutional amendment lowered the voting age of elections to the Lok Sabha and to the Legislative Assemblies of States from 21 years to 18 years?",
+    options: ["40st Amendment", "61st Amendment", "23st Amendment", "70st Amendment"],
+    answer: 1
+  },
+  {
+    category: "Brand Mascots",
+    text: "The company's mascot is a green owl named after the app. Luis von Ahn and Severin Hacker created this app with a mission to bring free language education to the world. Name the app.",
+    options: ["Zoozoos", "duolingo", "Onida", "Pink Bunny"],
+    answer: 1
+  },
+  {
+    category: "Business history",
+    text: "Established in 1992 in Bangalore, this state-owned company acts as a commercial and marketing arm of ISRO by prompting, commercially delivering and marketing products and services emanating from ISRO. It provides major technical consultancy services and transfers technologies to industry What is its name?",
+    options: ["Hero MotoCorp", "Amul Girl", "Antrix Corporation Limited", "Samsung"],
+    answer:2
+  },
+  {
+    category: "Tollywood",
+    text: "There are three actor-turned-politicians who went to become Chief Ministers of Indian states. This list includes M.G.R and J.Jayalalithaa who became Chief Minister of Tamil Nadu. Who was the third actor-turned-politician in the list, who went on to become the Chief Minister of Andhra Pradesh?",
+    options: ["Allu Arjun", "Y.S. Rajasekhara Reddy", "NT Rama Rao", "M.M.Keeravani"],
+    answer: 2
+  },
+  {
+    category: "Law and Justice",
+    text: "Introduced under the 2013 Act, this post was created to address complaints against public servants and expose corruption among officials. The role is typically held by a judge or retired Chief Justice. What is this post?",
+    options: ["Law & Order", "Lokayukta", "DNA testing", "Judicial Review"],
+    answer: 1
+  },
+   {
+    category: "World Constitutions",
+    text: "First adopted in 1911 and later extensively revised in 1962, this constitution remains the shortest written national constitution still in force, with only 3,814 words. Which country does it belong to?",
+    options: ["India", "Monaco", "Nepal", "Spain"],
+    answer: 1
+  },
+  
+  
+  
+     {
+    category: "Planetary Motion",
+    text: "Neptune has the solar system's fastest winds, which can exceed 2000 kmph, or nearly twice the speed of sound. Which gas, also used as fuel on Earth, is blown around at very high speeds on Neptune?",
+    options: ["Nitrogen", "Helium", "Methane", "Argon"],
+    answer: 2
+  },
+     {
+    category: "Modern History",
+    text: "Which political leader was instrumen-tal in negotiating the 1916 Lucknow Pact between the Indian National Congress and the Muslim League, and later served as the President of the Congress in 1919?",
+    options: ["Atal Behari Vajpayee", "Leon Trotsky", "Rash Behari Bose", "Bal Gangadhar Tilak"],
+    answer: 3
+  },
+     {
+    category: "Extraordinary Experiments",
+    text: "Tribhuvandas Kishibhai Patel and Harichand Megha Dalaya were part of this important experiment in the 1970s that made India the leader of a pivotal agro-based industry. Who is their famous collaborator, appointed as the first chairman of the National Dairy Development Board?",
+    options: ["Eureka", "Sir Ronald Ross", "Dr Verghese Kurien", "Din-i- Ilahi"],
+    answer: 2
+  },
+     {
+    category: "Artificial Intelligence",
+    text: "The Imitation Game is a 2014 biographical film of a certain British gentleman, and its name was the same as that of the name that he used to describe a test that he evolved to identify whether a computer can pass as a human. How do we better know this test?",
+    options: ["The Turing Test", "MMLU TEST", "ARC TEST", "lovelace test"],
+    answer: 0
+  },
+     {
+    category: "Apps",
+    text: "Anand Vijayan started this cab service app in 2012 in Coimbatore. It has since then extended its services to Chennai, Salem, Tirupur, Trichy, Madu-rai, Pollachi, Erode, Karur, Vellore, Ho-sur, Tirunelveli, and Thanjavur. Identify this cab company from Tamil Nadu.",
+    options: ["DigiLocker", "Zomato", "Red Bus", "RedTaxi"],
+    answer: 3
+  },
+     {
+    category: "Newspapers",
+    text: "Nicknamed as the 'Old Lady of Bori Bunder', this is the largest-selling English-language daily newspaper in the world. Lord Curzon, the Viceroy of India, once called it 'the leading paper in Asia'. Which English daily are we talking about, owned by the Sahu Jain family?",
+    options: ["Hicky's Bengal Gazette", "The Hindu", "The Times of India", "Malayala Manorama"],
+    answer: 2
+  },
+     {
+    category: "Indian Civil Services",
+    text: "A special cadre called the Indian Frontier Administrative Service was created in 1954 to administer NEFA (present day Arunachal Pradesh) and later for some North-Eastern regions. It was first mooted by the then Prime Minister Jawahar Lal Nehru. The services were placed under Ministry of External Affairs. To which present-day All India Service was IFAS merged to in 1968?",
+    options: ["Indian Police Service (IPS)", "Indian Foreign Service", "Indian Forest Service", "IAS (Indian Administrative Service)"],
+    answer: 3
+  },
+     {
+    category: "Infamous",
+    text: "Koose Munisamy was an Indian poacher, smuggler, domestic terror ist and bandit who was active for 36 years, and kidnapped major politicians for ransom. He was charged with sandalwood smuggling and poaching of elephants in the scrub lands and for ests in the states of Tamil Nadu, Kar nataka and Kerala. Identify his popular moniker.",
+    options: ["Harvey Weinstein", "Veerappan", "Pablo Escobar", "Sukumara Kurup"],
+    answer: 1
+  },
+  {
+    category: "Finance and Trade",
+    text: "Introduced in 1988 by the World Customs Organization (WCO), this system uses a six-digit code to categorize goods for trade, standardizing tariffs and customs procedures in over 200 countries. What is the name of this globally adopted classification system?",
+    options: [
+      "HS Code",
+      "CTI Code",
+      "IEC Code",
+      "NIC Code"
+    ],
+    answer: 0
+  }
+];
+
+const TOTAL_TIME = 20 * 60; // 20 minutes in seconds
+const PASS_PERCENT = 80;
+const LETTERS = ['A','B','C','D'];
+
+// ─── State ────────────────────────────────────────────────────
+let currentQ  = 0;
+let userAnswers = new Array(QUESTIONS.length).fill(null); // null = skipped
+let score     = 0;
+let timeLeft  = TOTAL_TIME;
+let timerInterval = null;
+let quizOver  = false;
+
+// ─── Init ─────────────────────────────────────────────────────
+window.onload = () => {
+  const hs = localStorage.getItem('qm_highscore');
+  if (hs !== null) {
+    document.getElementById('high-score-banner').classList.add('visible');
+    document.getElementById('hs-display').textContent = `${hs} / ${QUESTIONS.length}`;
+  }
+};
+
+// ─── Start ────────────────────────────────────────────────────
+function startQuiz() {
+  currentQ     = 0;
+  userAnswers  = new Array(QUESTIONS.length).fill(null);
+  score        = 0;
+  timeLeft     = TOTAL_TIME;
+  quizOver     = false;
+
+  showScreen('quiz-screen');
+  buildDots();
+  renderQuestion();
+  startTimer();
+}
+
+// ─── Screen Switcher ──────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function showStart() {
+  clearInterval(timerInterval);
+  const hs = localStorage.getItem('qm_highscore');
+  if (hs !== null) {
+    document.getElementById('high-score-banner').classList.add('visible');
+    document.getElementById('hs-display').textContent = `${hs} / ${QUESTIONS.length}`;
+  }
+  showScreen('start-screen');
+}
+
+// ─── Dot Nav ──────────────────────────────────────────────────
+function buildDots() {
+  const nav = document.getElementById('dot-nav');
+  nav.innerHTML = '';
+  QUESTIONS.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'dot';
+    d.textContent = i + 1;
+    d.id = `dot-${i}`;
+    d.onclick = () => jumpTo(i);
+    nav.appendChild(d);
+  });
+}
+
+function updateDots() {
+  QUESTIONS.forEach((_, i) => {
+    const d = document.getElementById(`dot-${i}`);
+    d.className = 'dot';
+    if (i === currentQ)                     d.classList.add('current');
+    else if (userAnswers[i] !== null)        d.classList.add('answered');
+  });
+}
+
+function jumpTo(i) {
+  if (quizOver) return;
+  currentQ = i;
+  renderQuestion();
+}
+
+// ─── Render ───────────────────────────────────────────────────
+function renderQuestion() {
+  const q = QUESTIONS[currentQ];
+  document.getElementById('q-category').textContent = q.category;
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('q-counter').textContent =
+    `Question ${currentQ + 1} of ${QUESTIONS.length}`;
+
+  const pct = Math.round((currentQ / QUESTIONS.length) * 100);
+  document.getElementById('progress-bar').style.width = pct + '%';
+  document.getElementById('progress-pct').textContent = pct + '%';
+
+  document.getElementById('btn-prev').disabled = currentQ === 0;
+  document.getElementById('btn-next').textContent =
+    currentQ === QUESTIONS.length - 1 ? 'Finish →' : 'Next →';
+
+  // Options
+  const grid = document.getElementById('options-grid');
+  grid.innerHTML = '';
+  q.options.forEach((opt, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    if (userAnswers[currentQ] === i) btn.classList.add('selected');
+    btn.innerHTML = `
+      <span class="opt-letter">${LETTERS[i]}</span>
+      <span class="opt-text">${opt}</span>
+    `;
+    btn.onclick = () => selectAnswer(i);
+    grid.appendChild(btn);
+  });
+
+  updateDots();
+}
+
+// ─── Select Answer ────────────────────────────────────────────
+function selectAnswer(idx) {
+  if (quizOver) return;
+  userAnswers[currentQ] = idx;
+  document.querySelectorAll('.option-btn').forEach((b, i) => {
+    b.classList.toggle('selected', i === idx);
+    b.querySelector('.opt-letter').style.background =
+      i === idx ? 'var(--accent)' : '';
+    b.querySelector('.opt-letter').style.color =
+      i === idx ? '#fff' : '';
+  });
+  updateDots();
+  updateLiveScore();
+}
+
+function updateLiveScore() {
+  score = 0;
+  userAnswers.forEach((ans, i) => {
+    if (ans !== null && ans === QUESTIONS[i].answer) score++;
+  });
+  document.getElementById('live-score-val').textContent = score;
+}
+
+// ─── Navigation ───────────────────────────────────────────────
+function nextQuestion() {
+  if (currentQ < QUESTIONS.length - 1) {
+    currentQ++;
+    renderQuestion();
+  } else {
+    submitQuiz();
+  }
+}
+
+function prevQuestion() {
+  if (currentQ > 0) {
+    currentQ--;
+    renderQuestion();
+  }
+}
+
+function confirmSubmit() {
+  const answered = userAnswers.filter(a => a !== null).length;
+  const unanswered = QUESTIONS.length - answered;
+  if (unanswered > 0) {
+    if (!confirm(`You have ${unanswered} unanswered question(s). Submit anyway?`)) return;
+  }
+  submitQuiz();
+}
+
+// ─── Timer ────────────────────────────────────────────────────
+function startTimer() {
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      submitQuiz(true);
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+  const s = (timeLeft % 60).toString().padStart(2, '0');
+  const label = `${m}:${s}`;
+
+  document.getElementById('timer-text').textContent = label;
+  document.getElementById('timer-ring-label').textContent = label;
+
+  // SVG ring
+  const circumference = 125.6;
+  const progress = timeLeft / TOTAL_TIME;
+  const offset = circumference * (1 - progress);
+  document.getElementById('timer-ring-path').style.strokeDashoffset = offset;
+
+  // Color states
+  const wrap = document.getElementById('timer-wrap');
+  wrap.classList.remove('warning','danger');
+  if (timeLeft <= 60)       wrap.classList.add('danger');
+  else if (timeLeft <= 180) wrap.classList.add('warning');
+}
+
+// ─── Submit ───────────────────────────────────────────────────
+function submitQuiz(timeout = false) {
+  clearInterval(timerInterval);
+  quizOver = true;
+  updateLiveScore();
+
+  const total    = QUESTIONS.length;
+  const correct  = score;
+  const skipped  = userAnswers.filter(a => a === null).length;
+  const wrong    = total - correct - skipped;
+  const pct      = Math.round((correct / total) * 100);
+  const passed   = pct >= PASS_PERCENT;
+
+  // High score
+  const hs = parseInt(localStorage.getItem('qm_highscore') || '0');
+  if (correct > hs) localStorage.setItem('qm_highscore', correct);
+
+  // Result messages
+  const [emoji, title, msg] =
+    pct >= 90 ? ['🏆','Excellent!','Outstanding! You aced this quiz!'] :
+    pct >= 70 ? ['🎉','Great Job!','Well done! You really know your stuff.'] :
+    pct >= 60 ? ['👍','Good Job!','You passed! Keep practising to improve.'] :
+    pct >= 40 ? ['📚','Keep Going!','Not quite there yet — review and retry!'] :
+               ['💪','Try Again!','Don\'t give up! Practice makes perfect.'];
+
+  document.getElementById('result-emoji').textContent    = emoji;
+  document.getElementById('result-title').textContent    = title;
+  document.getElementById('result-message').textContent  =
+    timeout ? '⏰ Time\'s up! ' + msg : msg;
+  document.getElementById('score-big').textContent       = `${correct}/${total}`;
+  document.getElementById('stat-correct').textContent    = correct;
+  document.getElementById('stat-wrong').textContent      = wrong;
+  document.getElementById('stat-skipped').textContent    = skipped;
+  document.getElementById('stat-pct').textContent        = pct + '%';
+
+  const badge = document.getElementById('status-badge');
+  badge.className = 'status-badge ' + (passed ? 'pass' : 'fail');
+  document.getElementById('status-icon').textContent = passed ? '✅' : '❌';
+  document.getElementById('status-text').textContent = passed ? 'PASS' : 'FAIL';
+
+  buildReview(correct, wrong, skipped);
+  showScreen('result-screen');
+}
+
+// ─── Review ───────────────────────────────────────────────────
+function buildReview(correct, wrong, skipped) {
+  const list = document.getElementById('review-list');
+  list.innerHTML = '';
+  QUESTIONS.forEach((q, i) => {
+    const ua = userAnswers[i];
+    const isSkipped = ua === null;
+    const isCorrect = !isSkipped && ua === q.answer;
+
+    const item = document.createElement('div');
+    item.className = 'review-item';
+    item.innerHTML = `
+      <div class="ri-q">
+        <span class="ri-num">${i+1}</span>
+        <span>${q.text}</span>
+      </div>
+      <div class="ri-result">
+        ${isSkipped
+          ? `<span class="ri-tag skipped">⏭ Skipped</span>`
+          : `<span class="ri-tag ${isCorrect ? 'correct' : 'wrong'}">
+               ${isCorrect ? '✅ Correct' : '❌ Wrong'}
+             </span>
+             ${!isCorrect
+               ? `<span class="ri-tag correct">✅ Answer: ${q.options[q.answer]}</span>`
+               : ''}
+             <span class="ri-tag ${isCorrect ? 'correct' : 'wrong'}">
+               Your pick: ${q.options[ua]}
+             </span>`
+        }
+      </div>`;
+    list.appendChild(item);
+  });
+}
+
+function toggleReview() {
+  const toggle = document.getElementById('review-toggle');
+  const list   = document.getElementById('review-list');
+  toggle.classList.toggle('open');
+  list.classList.toggle('open');
+}
+
+// ─── Restart ──────────────────────────────────────────────────
+function restartQuiz() {
+  document.getElementById('review-list').classList.remove('open');
+  document.getElementById('review-toggle').classList.remove('open');
+  startQuiz();
+}
+</script>
+</body>
+</html>
